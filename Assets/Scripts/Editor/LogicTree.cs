@@ -78,9 +78,7 @@ namespace Editor
         private List<ILogicNode> GetLeftSiblings(ILogicNode node)
         {
             var allSiblings = GetAllSiblings(node);
-
-            //todo 
-            return allSiblings.ToList();
+            return allSiblings.Where(sibling => sibling.GetHashCode() < node.GetHashCode()).ToList();
         }
 
         private List<ILogicNode> GetAllSiblings(ILogicNode node)
@@ -93,7 +91,7 @@ namespace Editor
             var children = GetChildren(parent);
             int count = 0;
             if (!children.Any())
-                return 0;
+                return 1;
 
             foreach (var child in children)
             {

@@ -46,23 +46,21 @@ namespace Editor.GraphVisualizer
         private Node CreateNode(ILogicNode logicNode, float parentXPos)
         {
             var leftGrandChildrenCombinedCount = _tree.LeftSiblingsCombinedGradChildrenCount(logicNode);
-            var leftSiblingCount = _tree.GetLeftSiblingCount(logicNode);
             int hierarchyLevel = _tree.GetHierarchyLevel(logicNode);
             
-            var nodePos = GetNodePosition(hierarchyLevel,leftGrandChildrenCombinedCount,leftSiblingCount, parentXPos);
+            var nodePos = GetNodePosition(hierarchyLevel,leftGrandChildrenCombinedCount, parentXPos);
             
             var node = _createNode(nodePos,logicNode);
             node.Title = logicNode.Name;
             return node;
         }
         
-        private static Vector2 GetNodePosition(int hierarchyLevel, int leftGrandChildrenCombinedCount,
-            int leftSiblingCount,float parentXPos)
+        private static Vector2 GetNodePosition(int hierarchyLevel, int leftGrandChildrenCombinedCount,float parentXPos)
         {
             var xSum = parentXPos;
             var space = 120;
 			
-            xSum += space * (leftSiblingCount + leftGrandChildrenCombinedCount);
+            xSum += space * leftGrandChildrenCombinedCount;
             
             var ySum = hierarchyLevel * space;
 			
