@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using UniRx;
 using UnityEditor;
 using UnityEditor.Graphs;
 using UnityEngine;
@@ -7,8 +8,6 @@ using UnityEngine;
 namespace Editor
 {
 	public class GraphGUIEx : GraphGUI{
-
-
 	}
 
 	public class InAndOutSlots
@@ -21,34 +20,43 @@ namespace Editor
 	{
 		IBonusNode Parent { get; }
 		string Name { get; }
+		IReadOnlyReactiveProperty<double> CompleteFactor { get; }
+		ReactiveProperty<double> OwnFactor { get; }
 	}
 
 	public class BonusNode : IBonusNode
 	{
+		private readonly IReadOnlyReactiveProperty<double> _completeFactor;
+		private readonly ReactiveProperty<double> _ownFactor = new ReactiveProperty<double>(1);
+		
 		public IBonusNode Parent { get; private set; }
+
 		public string Name { get; private set; }
 
-		public BonusNode(IBonusNode parent, string name)
+		public IReadOnlyReactiveProperty<double> CompleteFactor
 		{
-			Parent = parent;
-			Name = name;
+			get { return _completeFactor; }
 		}
 
-		public int GetLayer()
+		public ReactiveProperty<double> OwnFactor
 		{
-			var node = this;
-			var sum = 0;
-			while (node.Parent != null)
-			{
-				sum++;
-			}
+			get { return _ownFactor; }
+		}
 
-			return sum;
+		public BonusNode(IBonusNode parentNode, string name)
+		{
+			Parent = parentNode;
+			Name = name;
+
+			_completeFactor = _ownFactor.CombineLatest(parentNode.CompleteFactor, (own, parent) => own * parent).ToReactiveProperty();
 		}
 	}
 
 	public class RootNode : IBonusNode
 	{
+		private readonly ReactiveProperty<double> _completeFactor = new ReactiveProperty<double>(1);
+		private readonly ReactiveProperty<double> _ownFactor = new ReactiveProperty<double>(1);
+		
 		public IBonusNode Parent
 		{
 			get { return null; }
@@ -56,7 +64,17 @@ namespace Editor
 
 		public string Name
 		{
-			get { return "A"; }
+			get { return "Root"; }
+		}
+
+		public IReadOnlyReactiveProperty<double> CompleteFactor
+		{
+			get { return _completeFactor; }
+		}
+
+		public ReactiveProperty<double> OwnFactor
+		{
+			get { return _ownFactor; }
 		}
 	}
 
@@ -77,18 +95,28 @@ namespace Editor
 		public LogicTree()
 		{
 			_root = new RootNode();
-			var aa = CreateNode(Root, "AA");
-			CreateNode(aa, "AAA");
-			CreateNode(aa, "AAB");
-			CreateNode(aa, "AAC");
+			
+			CreateNode(Root, "Other 1");
+			CreateNode(Root, "Other 2");
+			CreateNode(Root, "Other 3");
+			CreateNode(Root, "Other 4");
+			CreateNode(Root, "Other 5");
+			
+			var everything = CreateNode(Root, "Everything");
+			var continent1 = CreateNode(everything, "Continent 1");
+			CreateNode(everything, "Continent 2");
+			CreateNode(everything, "Continent 3");
 
-			var ab = CreateNode(Root, "AB");
-			CreateNode(ab, "ABA");
-			CreateNode(ab, "ABB");
-			CreateNode(ab, "ABZ");
+			var mine1 = CreateNode(continent1, "Mine 1");
+			var mine2 = CreateNode(continent1, "Mine 2");
 			
+			var corridors =  CreateNode(mine1, "Corridors");
+			var ground =  CreateNode(mine1, "Ground");
+			var elevator =  CreateNode(mine1, "Elevator");
 			
-			CreateNode(Root, "AF");
+			CreateNode(corridors, "Speed");
+			CreateNode(corridors, "Capacity");
+
 		}
 
 
@@ -99,7 +127,7 @@ namespace Editor
 			return node;
 		}
 
-		public List<IBonusNode> GetChildren(IBonusNode parent)
+		private List<IBonusNode> GetChildren(IBonusNode parent)
 		{
 			return _nodes.Select(kvp => kvp.Value).Where(node => (node.Parent == parent)).ToList();
 		}
@@ -134,7 +162,7 @@ namespace Editor
 			return GetChildren(node.Parent).Where(child => child != node).ToList();
 		}
 
-		public int CombinedGrandChildrenCount(IBonusNode parent)
+		private int CombinedGrandChildrenCount(IBonusNode parent)
 		{
 			var children = GetChildren(parent);
 			int count = 0;
@@ -167,6 +195,19 @@ namespace Editor
 			}
 
 			return amount;
+		}
+
+		public int GetHierarchyLevel(IBonusNode bonusNode)
+		{
+			var node = bonusNode;
+			var sum = 0;
+			while (node.Parent != null)
+			{
+				sum++;
+				node = node.Parent;
+			}
+
+			return sum;
 		}
 	}
 
@@ -215,7 +256,7 @@ namespace Editor
 
 
 			var root = CreateNode(_tree.Root,0);
-			graphTree.AddNode("A", root);
+			graphTree.AddNode(_tree.Root.Name, root);
 
 			foreach (var kvp in _tree.Nodes)
 			{
@@ -239,38 +280,45 @@ namespace Editor
 
 			var leftGrandChildrenCombinedCount = _tree.LeftSiblingsCombinedGradChildrenCount(bonusNode);
 			var leftSiblingCount = _tree.GetLeftSiblingCount(bonusNode);
-
-			node.position = GetNodePosition(bonusNode.Name,leftGrandChildrenCombinedCount,leftSiblingCount, parentXPos);
-
+			int hierarchyLevel = _tree.GetHierarchyLevel(bonusNode);
+			
+			node.position = GetNodePosition(bonusNode.Name, hierarchyLevel,leftGrandChildrenCombinedCount,leftSiblingCount, parentXPos);
+			
 			var inAndOut = new InAndOutSlots
 			{
 				InPut = node.AddInputSlot("input"),
 				OutPut = node.AddOutputSlot("output")
 			};		
 			
-			node.AddProperty(new Property(typeof(System.Int32), "integer"));
+			node.AddProperty(new Property(typeof(double), "Complete Factor"));
+			node.AddProperty(new Property(typeof(double), "Own Factor"));
+			
+			bonusNode.CompleteFactor.Subscribe(factor => {node.SetPropertyValue("Complete Factor", factor); });
+			bonusNode.OwnFactor.Subscribe(factor => {node.SetPropertyValue("Own Factor", factor); });
+			
+
 			_graph.AddNode(node);
 			
 			return inAndOut;
 		}
 
-		private static Rect GetNodePosition(string bonusNodeName, int leftGrandChildrenCombinedCount,
+		private static Rect GetNodePosition(string name, int hierarchyLevel, int leftGrandChildrenCombinedCount,
 			int leftSiblingCount,float parentXPos)
 		{
 			var xSum = parentXPos;
-			var space = 50;
+			var space = 70;
 			
-			for (var index = 0; index < bonusNodeName.Length; index++)
-			{
+//			for (var index = 0; index < bonusNodeName.Length; index++)
+//			{
 				xSum += space * leftGrandChildrenCombinedCount;
 				xSum += space * leftSiblingCount;
 
-				Debug.Log("Name: "  + bonusNodeName + " GrandChildCount " + leftGrandChildrenCombinedCount);
-			}
+				Debug.Log("Name: "  + name + " GrandChildCount " + leftGrandChildrenCombinedCount);
+//			}
 
-			var ySum = bonusNodeName.Length * space;
+			var ySum = hierarchyLevel * space;
 			
-			return new Rect(xSum, ySum, 50, 50);
+			return new Rect(xSum, ySum, 0, 0);
 		}
 
 		private void OnGUI ()
