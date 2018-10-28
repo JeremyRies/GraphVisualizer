@@ -48,7 +48,7 @@ namespace Editor.GraphVisualizer
             InPoint.Draw();
             OutPoint.Draw();
           
-            GUI.Box(Rect, "", Style);
+            GUI.Box(Rect, "");
             GUI.Label(new Rect(Rect.x + 8, Rect.y + 5, 80, 20), Title);
             
             GUI.Label(new Rect(Rect.x + 4, Rect.y + 30, 80, 20), "Comp: " + _logicNode.CompleteFactor.Value);

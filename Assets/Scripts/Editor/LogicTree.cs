@@ -79,7 +79,8 @@ namespace Editor
         {
             var allSiblings = GetAllSiblings(node);
 
-            return allSiblings.Where(sibling => sibling.Name.Last() < node.Name.Last()).ToList();
+            //todo 
+            return allSiblings.ToList();
         }
 
         private List<ILogicNode> GetAllSiblings(ILogicNode node)

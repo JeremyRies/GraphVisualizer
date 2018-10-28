@@ -1,8 +1,7 @@
 ﻿using System;
+using Editor.GraphVisualizer;
 using UnityEngine;
 
-namespace Editor.GraphVisualizer
-{
     public class ConnectionPoint
     {
         public Rect Rect;
@@ -49,5 +48,4 @@ namespace Editor.GraphVisualizer
 //                }
 //            }
         }
-    }
 }
