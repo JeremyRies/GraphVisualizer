@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Editor.SecondApproach
+namespace Editor.GraphVisualizer
 {
     public class ConnectionPoint
     {
@@ -21,7 +21,7 @@ namespace Editor.SecondApproach
             _type = type;
             _style = style;
             _onClickConnectionPoint = onClickConnectionPoint;
-            Rect = new Rect(0, 0, 10f, 20f);
+            Rect = new Rect(0, 0, 10f, 10f);
         }
 
         public void Draw()
@@ -35,17 +35,19 @@ namespace Editor.SecondApproach
                     break;
 
                 case ConnectionPointType.Out:
-                    Rect.y = Node.Rect.y + Node.Rect.height * 0.9f ;
+                    Rect.y = Node.Rect.y + Node.Rect.height -10 ;
                     break;
             }
+            
+            GUI.Box(Rect,"");
 
-            if (GUI.Button(Rect, "", _style))
-            {
-                if (_onClickConnectionPoint != null)
-                {
-                    _onClickConnectionPoint(this);
-                }
-            }
+//            if (GUI.Button(Rect, "", _style))
+//            {
+//                if (_onClickConnectionPoint != null)
+//                {
+//                    _onClickConnectionPoint(this);
+//                }
+//            }
         }
     }
 }

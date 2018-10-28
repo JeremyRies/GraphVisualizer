@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor.SecondApproach
+namespace Editor.GraphVisualizer
 {
     public class Connection
     {

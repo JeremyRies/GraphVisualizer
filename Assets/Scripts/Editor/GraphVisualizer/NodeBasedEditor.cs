@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor.SecondApproach
+namespace Editor.GraphVisualizer
 {
     public class NodeCreator
     {
         private LogicTree _tree;
         private readonly Action<Node,Node> _connectNodes;
-        private readonly Func<Vector2, Node> _createNode;
+        private readonly Func<Vector2,ILogicNode, Node> _createNode;
 
-        public NodeCreator(Action<Node,Node> connectNodes, Func<Vector2, Node> createNode)
+        public NodeCreator(Action<Node,Node> connectNodes, Func<Vector2, ILogicNode, Node> createNode)
         {
             _connectNodes = connectNodes;
             _createNode = createNode;
@@ -51,7 +51,7 @@ namespace Editor.SecondApproach
             
             var nodePos = GetNodePosition(hierarchyLevel,leftGrandChildrenCombinedCount,leftSiblingCount, parentXPos);
             
-            var node = _createNode(nodePos);
+            var node = _createNode(nodePos,logicNode);
             node.Title = logicNode.Name;
             return node;
         }
@@ -111,8 +111,8 @@ namespace Editor.SecondApproach
             _inPointStyle.border = new RectOffset(4, 4, 12, 12);
 
             _outPointStyle = new GUIStyle();
-            _outPointStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn right.png") as Texture2D;
-            _outPointStyle.active.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn right on.png") as Texture2D;
+            _outPointStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn left.png") as Texture2D;
+            _outPointStyle.active.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn left on.png") as Texture2D;
             _outPointStyle.border = new RectOffset(4, 4, 12, 12);
         }
 
@@ -121,10 +121,10 @@ namespace Editor.SecondApproach
             _connections.Add(new Connection(arg1.InPoint, arg2.OutPoint, OnClickRemoveConnection));
         }
 
-        private Node CreateNode(Vector2 pos)
+        private Node CreateNode(Vector2 pos, ILogicNode logicNode)
         {
             return new Node(pos, 100, 100, _nodeStyle, _selectedNodeStyle, _inPointStyle, _outPointStyle,
-                OnClickInPoint, OnClickOutPoint, OnClickRemoveNode);
+                OnClickInPoint, OnClickOutPoint, OnClickRemoveNode,logicNode);
         }
 
         private void OnGUI()
@@ -295,7 +295,7 @@ namespace Editor.SecondApproach
                 _nodes = new List<Node>();
             }
 
-            _nodes.Add(new Node(mousePosition, 200, 50, _nodeStyle, _selectedNodeStyle, _inPointStyle, _outPointStyle, OnClickInPoint, OnClickOutPoint, OnClickRemoveNode));
+            _nodes.Add(new Node(mousePosition, 200, 50, _nodeStyle, _selectedNodeStyle, _inPointStyle, _outPointStyle, OnClickInPoint, OnClickOutPoint, OnClickRemoveNode,new RootNode()));
         }
 
         private void OnClickInPoint(ConnectionPoint inPoint)
