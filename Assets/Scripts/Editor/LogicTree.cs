@@ -34,13 +34,18 @@ namespace Editor
 
             var mine1 = CreateNode(continent1, "Mine 1");
             var mine2 = CreateNode(continent1, "Mine 2");
+            var mine3 = CreateNode(continent1, "Mine 3");
 			
             var corridors =  CreateNode(mine1, "Corridors");
             var ground =  CreateNode(mine1, "Ground");
             var elevator =  CreateNode(mine1, "Elevator");
 			
-            CreateNode(corridors, "Speed");
-            CreateNode(corridors, "Capacity");
+            CreateNode(corridors, "CorSpeed");
+            CreateNode(corridors, "CorCapacity");
+
+            CreateNode(ground, "GroundSpeed");
+            CreateNode(ground, "GroundCapacity");
+            CreateNode(ground, "GroundLoadSpeed");
 
         }
 
@@ -62,14 +67,15 @@ namespace Editor
             return GetLeftSiblings(node).Count;
         }
 		
-        public int LeftSiblingsCombinedGradChildrenCount(ILogicNode node)
+        public int LeftSiblingsLeafCount(ILogicNode node)
         {
             var leftSiblings = GetLeftSiblings(node);
             var sum = 0;
 			
             foreach (var leftSibling in leftSiblings)
             {
-                sum += CombinedGrandChildrenCount(leftSibling);
+                int amount = 0;
+                sum += GetChildRecursive(leftSibling,amount);
             }
 
             return sum;
@@ -86,22 +92,6 @@ namespace Editor
             return GetChildren(node.Parent).Where(child => child != node).ToList();
         }
 
-        private int CombinedGrandChildrenCount(ILogicNode parent)
-        {
-            var children = GetChildren(parent);
-            int count = 0;
-            if (!children.Any())
-                return 1;
-
-            foreach (var child in children)
-            {
-                var amount = 0;
-                count += GetChildRecursive(child,amount);
-            }
-			
-            return count;
-        }
-
         private int GetChildRecursive(ILogicNode child, int amount)
         {
             var children = GetChildren(child);
@@ -113,12 +103,13 @@ namespace Editor
             if (!hasGrandChildren)
                 return amount + children.Count;
 
+            var leaves = 0;
             foreach (var grandChild in children)
             {
-                amount += GetChildRecursive(grandChild,amount);
+                leaves += GetChildRecursive(grandChild,amount);
             }
 
-            return amount;
+            return amount + leaves;
         }
 
         public int GetHierarchyLevel(ILogicNode logicNode)

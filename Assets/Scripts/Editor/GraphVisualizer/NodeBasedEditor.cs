@@ -45,7 +45,7 @@ namespace Editor.GraphVisualizer
 
         private Node CreateNode(ILogicNode logicNode, float parentXPos)
         {
-            var leftGrandChildrenCombinedCount = _tree.LeftSiblingsCombinedGradChildrenCount(logicNode);
+            var leftGrandChildrenCombinedCount = _tree.LeftSiblingsLeafCount(logicNode);
             int hierarchyLevel = _tree.GetHierarchyLevel(logicNode);
             
             var nodePos = GetNodePosition(hierarchyLevel,leftGrandChildrenCombinedCount, parentXPos);
