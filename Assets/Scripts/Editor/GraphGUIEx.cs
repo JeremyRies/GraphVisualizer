@@ -4,6 +4,7 @@ using UniRx;
 using UnityEditor;
 using UnityEditor.Graphs;
 using UnityEngine;
+using Node = UnityEditor.Graphs.Node;
 
 namespace Editor
 {
@@ -16,20 +17,20 @@ namespace Editor
 		public Slot OutPut;
 	}
 
-	public interface IBonusNode
+	public interface ILogicNode
 	{
-		IBonusNode Parent { get; }
+		ILogicNode Parent { get; }
 		string Name { get; }
 		IReadOnlyReactiveProperty<double> CompleteFactor { get; }
 		ReactiveProperty<double> OwnFactor { get; }
 	}
 
-	public class BonusNode : IBonusNode
+	public class LogicNode : ILogicNode
 	{
 		private readonly IReadOnlyReactiveProperty<double> _completeFactor;
 		private readonly ReactiveProperty<double> _ownFactor = new ReactiveProperty<double>(1);
 		
-		public IBonusNode Parent { get; private set; }
+		public ILogicNode Parent { get; private set; }
 
 		public string Name { get; private set; }
 
@@ -43,7 +44,7 @@ namespace Editor
 			get { return _ownFactor; }
 		}
 
-		public BonusNode(IBonusNode parentNode, string name)
+		public LogicNode(ILogicNode parentNode, string name)
 		{
 			Parent = parentNode;
 			Name = name;
@@ -52,12 +53,12 @@ namespace Editor
 		}
 	}
 
-	public class RootNode : IBonusNode
+	public class RootNode : ILogicNode
 	{
 		private readonly ReactiveProperty<double> _completeFactor = new ReactiveProperty<double>(1);
 		private readonly ReactiveProperty<double> _ownFactor = new ReactiveProperty<double>(1);
 		
-		public IBonusNode Parent
+		public ILogicNode Parent
 		{
 			get { return null; }
 		}
@@ -80,8 +81,8 @@ namespace Editor
 
 	public class LogicTree
 	{
-		private readonly Dictionary<string,IBonusNode> _nodes = new Dictionary<string,IBonusNode>();
-		public Dictionary<string,IBonusNode> Nodes
+		private readonly Dictionary<string,ILogicNode> _nodes = new Dictionary<string,ILogicNode>();
+		public Dictionary<string,ILogicNode> Nodes
 		{
 			get { return _nodes; }
 		}
@@ -120,24 +121,24 @@ namespace Editor
 		}
 
 
-		private BonusNode CreateNode(IBonusNode parent, string name)
+		private LogicNode CreateNode(ILogicNode parent, string name)
 		{
-			var node = new BonusNode(parent, name);
+			var node = new LogicNode(parent, name);
 			_nodes.Add(name,node);
 			return node;
 		}
 
-		private List<IBonusNode> GetChildren(IBonusNode parent)
+		private List<ILogicNode> GetChildren(ILogicNode parent)
 		{
 			return _nodes.Select(kvp => kvp.Value).Where(node => (node.Parent == parent)).ToList();
 		}
 
-		public int GetLeftSiblingCount(IBonusNode node)
+		public int GetLeftSiblingCount(ILogicNode node)
 		{
 			return GetLeftSiblings(node).Count;
 		}
 		
-		public int LeftSiblingsCombinedGradChildrenCount(IBonusNode node)
+		public int LeftSiblingsCombinedGradChildrenCount(ILogicNode node)
 		{
 			var leftSiblings = GetLeftSiblings(node);
 			var sum = 0;
@@ -150,19 +151,19 @@ namespace Editor
 			return sum;
 		}
 
-		private List<IBonusNode> GetLeftSiblings(IBonusNode node)
+		private List<ILogicNode> GetLeftSiblings(ILogicNode node)
 		{
 			var allSiblings = GetAllSiblings(node);
 
 			return allSiblings.Where(sibling => sibling.Name.Last() < node.Name.Last()).ToList();
 		}
 
-		private List<IBonusNode> GetAllSiblings(IBonusNode node)
+		private List<ILogicNode> GetAllSiblings(ILogicNode node)
 		{
 			return GetChildren(node.Parent).Where(child => child != node).ToList();
 		}
 
-		private int CombinedGrandChildrenCount(IBonusNode parent)
+		private int CombinedGrandChildrenCount(ILogicNode parent)
 		{
 			var children = GetChildren(parent);
 			int count = 0;
@@ -178,7 +179,7 @@ namespace Editor
 			return count;
 		}
 
-		private int GetChildRecursive(IBonusNode child, int amount)
+		private int GetChildRecursive(ILogicNode child, int amount)
 		{
 			var children = GetChildren(child);
 			if (!children.Any())
@@ -197,9 +198,9 @@ namespace Editor
 			return amount;
 		}
 
-		public int GetHierarchyLevel(IBonusNode bonusNode)
+		public int GetHierarchyLevel(ILogicNode logicNode)
 		{
-			var node = bonusNode;
+			var node = logicNode;
 			var sum = 0;
 			while (node.Parent != null)
 			{
@@ -211,16 +212,21 @@ namespace Editor
 		}
 	}
 
-	public class GraphTree
+	public class Tree<T>
 	{
-		private readonly Dictionary<string, InAndOutSlots> _nodes = new Dictionary<string, InAndOutSlots>();
+		private readonly Dictionary<string, T> _nodes = new Dictionary<string, T>();
 
-		public void AddNode(string name, InAndOutSlots node)
+		public List<T> Nodes
+		{
+			get { return _nodes.Values.ToList(); }
+		}
+
+		public void AddNode(string name, T node)
 		{
 			_nodes.Add(name,node);
 		}
 
-		public InAndOutSlots GetNode(string name)
+		public T GetNode(string name)
 		{
 			return _nodes[name];
 		}
@@ -252,7 +258,7 @@ namespace Editor
 		private static void ConnectLogicToVisuals()
 		{
 			_tree = new LogicTree();
-			var graphTree = new GraphTree();
+			var graphTree = new Tree<InAndOutSlots>();
 
 
 			var root = CreateNode(_tree.Root,0);
@@ -273,16 +279,16 @@ namespace Editor
 			}
 		}
 
-		private static InAndOutSlots CreateNode(IBonusNode bonusNode, float parentXPos)
+		private static InAndOutSlots CreateNode(ILogicNode logicNode, float parentXPos)
 		{
 			Node node = CreateInstance<Node>();
-			node.title = bonusNode.Name;
+			node.title = logicNode.Name;
 
-			var leftGrandChildrenCombinedCount = _tree.LeftSiblingsCombinedGradChildrenCount(bonusNode);
-			var leftSiblingCount = _tree.GetLeftSiblingCount(bonusNode);
-			int hierarchyLevel = _tree.GetHierarchyLevel(bonusNode);
+			var leftGrandChildrenCombinedCount = _tree.LeftSiblingsCombinedGradChildrenCount(logicNode);
+			var leftSiblingCount = _tree.GetLeftSiblingCount(logicNode);
+			int hierarchyLevel = _tree.GetHierarchyLevel(logicNode);
 			
-			node.position = GetNodePosition(bonusNode.Name, hierarchyLevel,leftGrandChildrenCombinedCount,leftSiblingCount, parentXPos);
+			node.position = GetNodePosition(logicNode.Name, hierarchyLevel,leftGrandChildrenCombinedCount,leftSiblingCount, parentXPos);
 			
 			var inAndOut = new InAndOutSlots
 			{
@@ -293,8 +299,8 @@ namespace Editor
 			node.AddProperty(new Property(typeof(double), "Complete Factor"));
 			node.AddProperty(new Property(typeof(double), "Own Factor"));
 			
-			bonusNode.CompleteFactor.Subscribe(factor => {node.SetPropertyValue("Complete Factor", factor); });
-			bonusNode.OwnFactor.Subscribe(factor => {node.SetPropertyValue("Own Factor", factor); });
+			logicNode.CompleteFactor.Subscribe(factor => {node.SetPropertyValue("Complete Factor", factor); });
+			logicNode.OwnFactor.Subscribe(factor => {node.SetPropertyValue("Own Factor", factor); });
 			
 
 			_graph.AddNode(node);
