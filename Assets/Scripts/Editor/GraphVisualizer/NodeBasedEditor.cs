@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UniRx;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,7 +26,9 @@ namespace Editor.GraphVisualizer
 
             var root = CreateNode(_tree.Root,0);
             graphTree.AddNode(_tree.Root.Name, root);
-
+            
+           
+            
             foreach (var kvp in _tree.Nodes)
             {
                 var logicNode = kvp.Value;
@@ -36,6 +39,7 @@ namespace Editor.GraphVisualizer
                 graphTree.AddNode(logicNode.Name, newNode);
 
 
+                
                 
                 _connectNodes(newNode,parent);
             }
@@ -91,6 +95,13 @@ namespace Editor.GraphVisualizer
             window.titleContent = new GUIContent("Node Based Editor");
         }
 
+        [MenuItem("Window/Print")]
+        private static void Print()
+        {
+            var printer = new NodePrinter();
+            printer.PrintNodes();
+        }
+        
         private void OnEnable()
         {
             var nodeCreator = new NodeCreator(ConnectNodes, CreateNode);

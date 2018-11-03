@@ -21,21 +21,22 @@ namespace Editor
         public LogicTree()
         {
             _root = new RootNode();
-			
-            CreateNode(Root, "Other 1");
-            CreateNode(Root, "Other 2");
-            CreateNode(Root, "Other 3");
-            CreateNode(Root, "Other 4");
-            CreateNode(Root, "Other 5");
+			_nodes.Add(_root.Name,_root);
+            
+            CreateNode(Root, "Other1");
+            CreateNode(Root, "Other2");
+            CreateNode(Root, "Other3");
+            CreateNode(Root, "Other4");
+            CreateNode(Root, "Other5");
 			
             var everything = CreateNode(Root, "Everything");
-            var continent1 = CreateNode(everything, "Continent 1");
-            CreateNode(everything, "Continent 2");
-            CreateNode(everything, "Continent 3");
+            var continent1 = CreateNode(everything, "Continent1");
+            CreateNode(everything, "Continent2");
+            CreateNode(everything, "Continent3");
 
-            var mine1 = CreateNode(continent1, "Mine 1");
-            var mine2 = CreateNode(continent1, "Mine 2");
-            var mine3 = CreateNode(continent1, "Mine 3");
+            var mine1 = CreateNode(continent1, "Mine1");
+            var mine2 = CreateNode(continent1, "Mine2");
+            var mine3 = CreateNode(continent1, "Mine3");
 			
             var corridors =  CreateNode(mine1, "Corridors");
             var ground =  CreateNode(mine1, "Ground");
@@ -58,7 +59,7 @@ namespace Editor
             return node;
         }
 
-        private List<ILogicNode> GetChildren(ILogicNode parent)
+        public List<ILogicNode> GetChildren(ILogicNode parent)
         {
             return _nodes.Select(kvp => kvp.Value).Where(node => (node.Parent == parent)).ToList();
         }
