@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Editor
@@ -84,7 +85,7 @@ namespace Editor
         private List<ILogicNode> GetLeftSiblings(ILogicNode node)
         {
             var allSiblings = GetAllSiblings(node);
-            return allSiblings.Where(sibling => sibling.GetHashCode() < node.GetHashCode()).ToList();
+            return allSiblings.Where(sibling => string.Compare(sibling.Name, node.Name, StringComparison.Ordinal) < 1).ToList();
         }
 
         private List<ILogicNode> GetAllSiblings(ILogicNode node)
