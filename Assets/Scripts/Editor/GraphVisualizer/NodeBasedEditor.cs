@@ -32,8 +32,12 @@ namespace Editor.GraphVisualizer
             foreach (var kvp in _tree.Nodes)
             {
                 var logicNode = kvp.Value;
+                if(logicNode.Parent==null)
+                    continue;
+                
                 var parent = graphTree.GetNode(logicNode.Parent.Name);
 				
+                
                 var newNode = CreateNode(logicNode,parent.Rect.position.x);
 
                 graphTree.AddNode(logicNode.Name, newNode);

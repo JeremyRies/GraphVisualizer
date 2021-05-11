@@ -29,13 +29,13 @@ namespace Editor.GraphVisualizer
                 2f
             );
 
-            if (Handles.Button((InPoint.Rect.center + OutPoint.Rect.center) * 0.5f, Quaternion.identity, 4, 8, Handles.RectangleCap))
-            {
-                if (OnClickRemoveConnection != null)
-                {
-                    OnClickRemoveConnection(this);
-                }
-            }
+            // if (Handles.Button((InPoint.Rect.center + OutPoint.Rect.center) * 0.5f, Quaternion.identity, 4, 8, Handles.RectangleCap))
+            // {
+            //     if (OnClickRemoveConnection != null)
+            //     {
+            //         OnClickRemoveConnection(this);
+            //     }
+            // }
         }
     }
 }
